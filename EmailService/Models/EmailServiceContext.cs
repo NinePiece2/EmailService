@@ -5,16 +5,18 @@ using System.Configuration;
 
 namespace EmailService.Models;
 
-public partial class EmailServiceEntities : DbContext
+public partial class EmailServiceContext : DbContext
 {
-    public EmailServiceEntities()
+    public EmailServiceContext()
     {
     }
 
-    public EmailServiceEntities(DbContextOptions<EmailServiceEntities> options)
+    public EmailServiceContext(DbContextOptions<EmailServiceContext> options)
         : base(options)
     {
     }
+
+    public virtual DbSet<Credential> Credentials { get; set; }
 
     public virtual DbSet<IncomingMessageRecepient> IncomingMessageRecepients { get; set; }
 
@@ -25,11 +27,21 @@ public partial class EmailServiceEntities : DbContext
     public virtual DbSet<VwMessageQueue> VwMessageQueues { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        //=> optionsBuilder.UseSqlServer(ConfigurationManager.ConnectionStrings["EmailServiceEntities"].ConnectionString);
-        => optionsBuilder.UseSqlServer(ConfigurationManager.AppSettings["EmailServiceEntities"]);
+        => optionsBuilder.UseSqlServer(ConfigurationManager.ConnectionStrings["EmailServiceEntities"].ConnectionString);
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Credential>(entity =>
+        {
+            entity.HasKey(e => e.Uid).HasName("PK__Credenti__C5B19602CC1516BE");
+
+            entity.Property(e => e.Uid).HasColumnName("UID");
+            entity.Property(e => e.Password).IsUnicode(false);
+            entity.Property(e => e.UserName)
+                .HasMaxLength(250)
+                .IsUnicode(false);
+        });
+
         modelBuilder.Entity<IncomingMessageRecepient>(entity =>
         {
             entity.HasKey(e => e.Uid).HasName("PK__Incoming__C5B196028AB4035E");

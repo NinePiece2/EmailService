@@ -10,7 +10,7 @@ namespace EmailService
         {
             try
             {
-                using (EmailServiceEntities entity = new EmailServiceEntities())
+                using (EmailServiceContext entity = new EmailServiceContext())
                 {
                     while (true)
                     {
@@ -34,7 +34,7 @@ namespace EmailService
         {
             try
             {
-                using (EmailServiceEntities entity = new EmailServiceEntities())
+                using (EmailServiceContext entity = new EmailServiceContext())
                 {
                     var messageQueue = entity.VwMessageQueues.ToList();
 
@@ -129,11 +129,13 @@ namespace EmailService
         {
             try
             {
+                EmailServiceContext entity = new EmailServiceContext();
+
                 mailMessage.From = new MailAddress("server@romitsagu.com", fromname);
                 mailMessage.Sender = new MailAddress("server@romitsagu.com", fromname);
                 SmtpClient client = new SmtpClient();
                 client.UseDefaultCredentials = false;
-                client.Credentials = new System.Net.NetworkCredential("server@romitsagu.com", ConfigurationManager.AppSettings["Password"]);
+                client.Credentials = new System.Net.NetworkCredential("server@romitsagu.com", entity.Credentials.Where(c => c.UserName == "server@romitsagu.com").Select(c => c.Password).FirstOrDefault());
                 client.Port = 587;
                 client.Host = "smtp.office365.com";
                 client.DeliveryMethod = SmtpDeliveryMethod.Network;
