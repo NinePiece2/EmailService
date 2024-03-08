@@ -25,6 +25,7 @@ namespace EmailService
             }
             catch (Exception e)
             {
+                Console.WriteLine(e.Message);
                 await SendAlertEmail(e);
             }
         }
