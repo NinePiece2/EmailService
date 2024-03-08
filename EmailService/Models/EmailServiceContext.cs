@@ -25,7 +25,8 @@ public partial class EmailServiceEntities : DbContext
     public virtual DbSet<VwMessageQueue> VwMessageQueues { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseSqlServer(ConfigurationManager.ConnectionStrings["EmailServiceEntities"].ConnectionString);
+        //=> optionsBuilder.UseSqlServer(ConfigurationManager.ConnectionStrings["EmailServiceEntities"].ConnectionString);
+        => optionsBuilder.UseSqlServer(ConfigurationManager.AppSettings["EmailServiceEntities"]);
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
