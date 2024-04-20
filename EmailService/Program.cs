@@ -108,9 +108,9 @@ namespace EmailService
                     mail.Headers.Add("X-Priority", "1");
                 }
 
-                if (fromname != null)
+                if (fromname != null && fromemail != null)
                 {
-                    SendEmailSmtpClient(mail, fromname);
+                    SendEmailSmtpClient(mail, fromname, fromemail);
 
                 }
                 else
@@ -125,17 +125,18 @@ namespace EmailService
             }
         }
 
-        private static void SendEmailSmtpClient(MailMessage mailMessage, string fromname = "Email Service")
+        private static void SendEmailSmtpClient(MailMessage mailMessage, string fromname = "Email Service", string fromeemail = "server@romitsagu.com")
         {
             try
             {
                 EmailServiceContext entity = new EmailServiceContext();
 
-                mailMessage.From = new MailAddress("server@romitsagu.com", fromname);
-                mailMessage.Sender = new MailAddress("server@romitsagu.com", fromname);
+                mailMessage.From = new MailAddress(fromeemail, fromname);
+                mailMessage.Sender = new MailAddress(fromeemail, fromname);
+
                 SmtpClient client = new SmtpClient();
                 client.UseDefaultCredentials = false;
-                client.Credentials = new System.Net.NetworkCredential("server@romitsagu.com", entity.Credentials.Where(c => c.UserName == "server@romitsagu.com").Select(c => c.Password).FirstOrDefault());
+                client.Credentials = new System.Net.NetworkCredential(fromeemail, entity.Credentials.Where(c => c.UserName == fromeemail).Select(c => c.Password).FirstOrDefault());
                 client.Port = 587;
                 client.Host = "smtp.office365.com";
                 client.DeliveryMethod = SmtpDeliveryMethod.Network;
