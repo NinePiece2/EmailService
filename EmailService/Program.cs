@@ -223,7 +223,7 @@ namespace EmailService
         {
             try
             {
-                Console.Log(ConfigurationManager.AppSettings["BrevoAPIKey"]);
+                Console.WriteLine(ConfigurationManager.AppSettings["BrevoAPIKey"]);
                 sibClient.Configuration.Default.AddApiKey("api-key", ConfigurationManager.AppSettings["BrevoAPIKey"]);
                 sibAPI.TransactionalEmailsApi apiInstance = new sibAPI.TransactionalEmailsApi();
 
@@ -235,6 +235,7 @@ namespace EmailService
             catch (Exception e)
             {
                 SendAlertEmail(e);
+                Console.WriteLine(e);
             }
         }
 
