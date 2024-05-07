@@ -223,8 +223,12 @@ namespace EmailService
         {
             try
             {
-                Console.WriteLine(ConfigurationManager.AppSettings["BrevoAPIKey"]);
-                sibClient.Configuration.Default.AddApiKey("api-key", ConfigurationManager.AppSettings["BrevoAPIKey"]);
+                var BrevoAPIKey = Environment.GetEnvironmentVariable("BrevoAPIKey");
+                if (String.IsNullOrEmpty(BrevoAPIKey)) {
+                    BrevoAPIKey = ConfigurationManager.AppSettings["BrevoAPIKey"];
+                }
+
+                sibClient.Configuration.Default.AddApiKey("api-key", BrevoAPIKey);
                 sibAPI.TransactionalEmailsApi apiInstance = new sibAPI.TransactionalEmailsApi();
 
                 mail.Sender = new sibModel.SendSmtpEmailSender(fromname, fromeemail);
@@ -235,7 +239,6 @@ namespace EmailService
             catch (Exception e)
             {
                 SendAlertEmail(e);
-                Console.WriteLine(e);
             }
         }
 
