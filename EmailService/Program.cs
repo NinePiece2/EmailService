@@ -1,6 +1,10 @@
 ﻿using EmailService.Models;
 using System.Net.Mail;
 using System.Configuration;
+using sibAPI = sib_api_v3_sdk.Api;
+using sibClient = sib_api_v3_sdk.Client;
+using sibModel = sib_api_v3_sdk.Model;
+using Newtonsoft.Json.Linq;
 
 namespace EmailService
 {
@@ -89,39 +93,105 @@ namespace EmailService
         {
             try
             {
-                MailMessage mail = new MailMessage();
-                
-                mail.Body = BodyHtml;
-                if (!String.IsNullOrEmpty(to))
-                    mail.To.Add(to);
-                if (!String.IsNullOrEmpty(cc))
-                    mail.CC.Add(cc);
-                if (!String.IsNullOrEmpty(bcc))
-                    mail.Bcc.Add(bcc);
-
-                mail.Subject = string.IsNullOrWhiteSpace(Title) ? "Test" : Title;
-                mail.IsBodyHtml = true;
-
-                if (IsImporantTag)
+                if (!IsSecure)
                 {
-                    mail.Headers.Add("Importance", "High");
-                    mail.Headers.Add("X-Priority", "1");
-                }
+                    sibModel.SendSmtpEmail mail = new sibModel.SendSmtpEmail();
+                    mail.Subject = Title;
+                    mail.HtmlContent = BodyHtml;
 
-                if (fromname != null && fromemail != null)
-                {
-                    SendEmailSmtpClient(mail, fromname, fromemail);
+                    if (!String.IsNullOrEmpty(to)) {
+                        List<sibModel.SendSmtpEmailTo> recipients = new List<sibModel.SendSmtpEmailTo>();
 
+                        string[] emails = to.Split(',');
+
+                        foreach(var email in emails)
+                        {
+                            recipients.Add(new sibModel.SendSmtpEmailTo(email));
+                        }
+                        mail.To = recipients;
+                    }
+
+                    if (!String.IsNullOrEmpty(cc))
+                    {
+                        List<sibModel.SendSmtpEmailCc> recipients = new List<sibModel.SendSmtpEmailCc>();
+
+                        string[] emails = cc.Split(',');
+
+                        foreach (var email in emails)
+                        {
+                            recipients.Add(new sibModel.SendSmtpEmailCc(email));
+                        }
+                        mail.Cc = recipients;
+                    }
+
+                    if (!String.IsNullOrEmpty(bcc))
+                    {
+                        List<sibModel.SendSmtpEmailBcc> recipients = new List<sibModel.SendSmtpEmailBcc>();
+
+                        string[] emails = bcc.Split(',');
+
+                        foreach (var email in emails)
+                        {
+                            recipients.Add(new sibModel.SendSmtpEmailBcc(email));
+                        }
+                        mail.Bcc = recipients;
+                    }
+
+                    if (IsImporantTag)
+                    {
+                        JObject Headers = new JObject();
+                        Headers.Add("Importance", "High");
+                        Headers.Add("X-Priority", "1");
+                        mail.Headers = Headers;
+                    }
+
+
+                    if (fromname != null && fromemail != null)
+                    {
+
+                        SendEmailBrevo(mail, fromname, fromemail);
+                    }
+                    else
+                    {
+                        SendEmailBrevo(mail);
+                    }
                 }
                 else
                 {
-                    SendEmailSmtpClient(mail);
-                }
+                    MailMessage mail = new MailMessage();
 
+                    mail.Body = BodyHtml;
+                    if (!String.IsNullOrEmpty(to))
+                        mail.To.Add(to);
+                    if (!String.IsNullOrEmpty(cc))
+                        mail.CC.Add(cc);
+                    if (!String.IsNullOrEmpty(bcc))
+                        mail.Bcc.Add(bcc);
+
+                    mail.Subject = string.IsNullOrWhiteSpace(Title) ? "Test" : Title;
+                    mail.IsBodyHtml = true;
+
+                    if (IsImporantTag)
+                    {
+                        mail.Headers.Add("Importance", "High");
+                        mail.Headers.Add("X-Priority", "1");
+                    }
+
+                    if (fromname != null && fromemail != null)
+                    {
+                        SendEmailSmtpClient(mail, fromname, fromemail);
+
+                    }
+                    else
+                    {
+                        SendEmailSmtpClient(mail);
+                    }
+
+                }
             }
             catch (Exception e)
             {
-                 await SendAlertEmail(e);
+                await SendAlertEmail(e);
             }
         }
 
@@ -148,6 +218,25 @@ namespace EmailService
                 SendAlertEmail(e);
             }
         }
+
+        private static void SendEmailBrevo(sibModel.SendSmtpEmail mail, string fromname = "Email Service", string fromeemail = "server@romitsagu.com")
+        {
+            try
+            {
+                sibClient.Configuration.Default.AddApiKey("api-key", ConfigurationManager.AppSettings["BrevoAPIKey"]);
+                sibAPI.TransactionalEmailsApi apiInstance = new sibAPI.TransactionalEmailsApi();
+
+                mail.Sender = new sibModel.SendSmtpEmailSender(fromname, fromeemail);
+                mail.ReplyTo = new sibModel.SendSmtpEmailReplyTo("noreply@romitsagu.com", "No-Reply");
+
+                sibModel.CreateSmtpEmail result = apiInstance.SendTransacEmail(mail);
+            }
+            catch (Exception e)
+            {
+                SendAlertEmail(e);
+            }
+        }
+
         private async static Task SendAlertEmail(Exception ex, string application = "Email Service - Errors")
         {
             var message = new MailMessage();
