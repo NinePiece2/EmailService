@@ -93,7 +93,7 @@ namespace EmailService
         {
             try
             {
-                if (!IsSecure)
+                if (!IsSecure || IsSecure)
                 {
                     sibModel.SendSmtpEmail mail = new sibModel.SendSmtpEmail();
                     mail.Subject = Title;
@@ -195,8 +195,10 @@ namespace EmailService
             }
         }
 
+        /* Not working*/
         private static void SendEmailSmtpClient(MailMessage mailMessage, string fromname = "Email Service", string fromeemail = "server@romitsagu.com")
         {
+
             try
             {
                 EmailServiceContext entity = new EmailServiceContext();
@@ -244,14 +246,29 @@ namespace EmailService
 
         private async static Task SendAlertEmail(Exception ex, string application = "Email Service - Errors")
         {
-            var message = new MailMessage();
-            message.To.Add("romit.sagu@hotmail.com");
-            message.Headers.Add("Importance", "High");
-            message.Headers.Add("X-Priority", "1");
-            message.Subject = "Exception in " + application;
-            message.Body = GetBody(ex, application);
-            message.IsBodyHtml = true;
-            SendEmailSmtpClient(message, application);
+            //var message = new MailMessage();
+            //message.To.Add("romit.sagu@hotmail.com");
+            //message.Headers.Add("Importance", "High");
+            //message.Headers.Add("X-Priority", "1");
+            //message.Subject = "Exception in " + application;
+            //message.Body = GetBody(ex, application);
+            //message.IsBodyHtml = true;
+            //SendEmailSmtpClient(message, application);
+
+            sibModel.SendSmtpEmail mail = new sibModel.SendSmtpEmail();
+            mail.Subject = "Exception in " + application;
+            mail.HtmlContent = GetBody(ex, application);
+
+            List<sibModel.SendSmtpEmailTo> recipients = new List<sibModel.SendSmtpEmailTo>();
+            recipients.Add(new sibModel.SendSmtpEmailTo("romit.sagu@hotmail.com"));
+            mail.To = recipients;
+
+            JObject Headers = new JObject();
+            Headers.Add("Importance", "High");
+            Headers.Add("X-Priority", "1");
+            mail.Headers = Headers;
+
+            SendEmailBrevo(mail, application);
 
         }
 
