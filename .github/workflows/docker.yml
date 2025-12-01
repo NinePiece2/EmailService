@@ -5,28 +5,96 @@ on:
   push:
     branches:
       - master
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      -
-        name: Checkout
-        uses: actions/checkout@v4
-      -
-        name: Login to Docker Hub
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Login to Github Container Registry
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      -
-        name: Set up Docker Buildx
+          registry: ghcr.io
+          username: ${{github.actor}}
+          password: ${{secrets.GITHUB_TOKEN}}
+
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      -
-        name: Build and push
-        uses: docker/build-push-action@v5
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./EmailService/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/emailservice:latest
+          tags: ghcr.io/ninepiece2/emailservice:latest
+    
+
+  deploy:
+    runs-on: self-hosted
+    env:
+      KUBECONFIG: /root/.kube/config
+    steps:
+      - name: Create Deployment
+        id: deployment
+        uses: chrnorm/deployment-action@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          environment: production
+          description: "Deploy commit ${{ github.sha }} to Kubernetes"
+          transient-environment: false
+          production-environment: true
+      
+      - name: Mark Deployment as In Progress
+        uses: chrnorm/deployment-status@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          state: in_progress
+          deployment-id: ${{ steps.deployment.outputs.deployment_id }}
+
+      - name: Update Kubernetes Deployment
+        run: |
+          # Update deployment
+          kubectl set image deployment/emailservice \
+            emailservice=ghcr.io/ninepiece2/emailservice:latest \
+            -n emailservice
+
+          # Add deployment annotations
+          kubectl annotate deployment emailservice \
+            kubernetes.io/change-cause="Deployed commit ${{ github.sha }} from branch ${{ github.ref_name }} via GitHub Actions run https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}. Updated images: APP=ghcr.io/ninepiece2/emailservice:latest" \
+            --overwrite -n emailservice
+
+          # Restart deployments to pick up new images
+          kubectl rollout restart deployment/emailservice -n emailservice
+          
+      - name: Mark Deployment as Rolling Out
+        uses: chrnorm/deployment-status@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          state: in_progress
+          deployment-id: ${{ steps.deployment.outputs.deployment_id }}
+          description: "Rolling out to Kubernetes..."
+
+      - name: Wait for Rollout to Finish
+        run: |
+          echo "⏳ Waiting for rollout to finish..."
+          kubectl rollout status deployment/emailservice-api -n emailservice-api --timeout=15m
+
+      - name: Mark Deployment as Successful
+        if: success()
+        uses: chrnorm/deployment-status@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          state: success
+          deployment-id: ${{ steps.deployment.outputs.deployment_id }}
+
+      - name: Mark Deployment as Failed
+        if: failure()
+        uses: chrnorm/deployment-status@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          state: failure
+          deployment-id: ${{ steps.deployment.outputs.deployment_id }}

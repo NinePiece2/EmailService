@@ -221,7 +221,7 @@ namespace EmailService
             }
         }
 
-        private static void SendEmailBrevo(sibModel.SendSmtpEmail mail, string fromname = "Email Service", string fromeemail = "server@romitsagu.com")
+        private static void SendEmailBrevo(sibModel.SendSmtpEmail mail, string fromname = "Email Service", string fromemail = "server@romitsagu.com")
         {
             try
             {
@@ -233,8 +233,15 @@ namespace EmailService
                 sibClient.Configuration.Default.AddApiKey("api-key", BrevoAPIKey);
                 sibAPI.TransactionalEmailsApi apiInstance = new sibAPI.TransactionalEmailsApi();
 
-                mail.Sender = new sibModel.SendSmtpEmailSender(fromname, fromeemail);
-                mail.ReplyTo = new sibModel.SendSmtpEmailReplyTo("noreply@romitsagu.com", "No-Reply");
+                mail.Sender = new sibModel.SendSmtpEmailSender(fromname, fromemail);
+                if (fromemail.Contains("@romitsagu.com"))
+                {
+                    mail.ReplyTo = new sibModel.SendSmtpEmailReplyTo("noreply@romitsagu.com", "No-Reply");
+                }
+                else
+                {
+                    mail.ReplyTo = new sibModel.SendSmtpEmailReplyTo(fromemail, fromname);
+                }
 
                 sibModel.CreateSmtpEmail result = apiInstance.SendTransacEmail(mail);
             }
@@ -260,7 +267,7 @@ namespace EmailService
             mail.HtmlContent = GetBody(ex, application);
 
             List<sibModel.SendSmtpEmailTo> recipients = new List<sibModel.SendSmtpEmailTo>();
-            recipients.Add(new sibModel.SendSmtpEmailTo("romit.sagu@hotmail.com"));
+            recipients.Add(new sibModel.SendSmtpEmailTo("romit@romitsagu.com"));
             mail.To = recipients;
 
             JObject Headers = new JObject();
