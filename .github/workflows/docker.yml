@@ -35,6 +35,7 @@ jobs:
 
   deploy:
     runs-on: self-hosted
+    needs: build
     env:
       KUBECONFIG: /root/.kube/config
     steps:
@@ -69,7 +70,7 @@ jobs:
 
           # Restart deployments to pick up new images
           kubectl rollout restart deployment/emailservice -n emailservice
-          
+
       - name: Mark Deployment as Rolling Out
         uses: chrnorm/deployment-status@v2
         with:
