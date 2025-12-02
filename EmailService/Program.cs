@@ -206,7 +206,6 @@ namespace EmailService
                 mailMessage.From = new MailAddress(fromemail, fromname);
                 mailMessage.Sender = new MailAddress(fromemail, fromname);
 
-                #if DEBUG
                 // Trust all certificates with logging
                 System.Net.ServicePointManager.ServerCertificateValidationCallback = 
                     (sender, certificate, chain, sslPolicyErrors) => 
@@ -221,7 +220,6 @@ namespace EmailService
                         #endif
                         return true; // Trust anyway
                     };
-                #endif
 
                 SmtpClient client = new SmtpClient();
                 client.UseDefaultCredentials = false;
