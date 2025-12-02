@@ -93,7 +93,7 @@ namespace EmailService
         {
             try
             {
-                if (!IsSecure || IsSecure)
+                if (!IsSecure)
                 {
                     sibModel.SendSmtpEmail mail = new sibModel.SendSmtpEmail();
                     mail.Subject = Title;
@@ -196,23 +196,40 @@ namespace EmailService
         }
 
         /* Not working*/
-        private static void SendEmailSmtpClient(MailMessage mailMessage, string fromname = "Email Service", string fromeemail = "server@romitsagu.com")
+        private static void SendEmailSmtpClient(MailMessage mailMessage, string fromname = "Email Service", string fromemail = "server@romitsagu.com")
         {
 
             try
             {
                 EmailServiceContext entity = new EmailServiceContext();
 
-                mailMessage.From = new MailAddress(fromeemail, fromname);
-                mailMessage.Sender = new MailAddress(fromeemail, fromname);
+                mailMessage.From = new MailAddress(fromemail, fromname);
+                mailMessage.Sender = new MailAddress(fromemail, fromname);
+
+                // Trust all certificates with logging
+                System.Net.ServicePointManager.ServerCertificateValidationCallback = 
+                    (sender, certificate, chain, sslPolicyErrors) => 
+                    {
+                        #if DEBUG
+                        if (sslPolicyErrors != System.Net.Security.SslPolicyErrors.None)
+                        {
+                            Console.WriteLine($"SSL Certificate Warning: {sslPolicyErrors}");
+                            if (certificate != null)
+                                Console.WriteLine($"Certificate Subject: {certificate.Subject}");
+                        }
+                        return true; // Trust anyway
+                        #endif
+                    };
 
                 SmtpClient client = new SmtpClient();
                 client.UseDefaultCredentials = false;
-                client.Credentials = new System.Net.NetworkCredential(fromeemail, entity.Credentials.Where(c => c.UserName == fromeemail).Select(c => c.Password).FirstOrDefault());
+                client.Credentials = new System.Net.NetworkCredential(fromemail, entity.Credentials.Where(c => c.UserName == fromemail).Select(c => c.Password).FirstOrDefault());
                 client.Port = 587;
-                client.Host = "smtp.office365.com";
+                client.Host = "192.168.15.201";
                 client.DeliveryMethod = SmtpDeliveryMethod.Network;
                 client.EnableSsl = true;
+                client.Timeout = 10000;
+                
                 client.Send(mailMessage);
             }
             catch (Exception e)
