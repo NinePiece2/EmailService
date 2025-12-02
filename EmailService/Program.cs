@@ -22,7 +22,7 @@ namespace EmailService
                         {
                             await EmailRun();
                         }
-                        await Task.Delay(5000);
+                        await Task.Delay(2000);
                     }
 
                 }
@@ -195,7 +195,6 @@ namespace EmailService
             }
         }
 
-        /* Not working*/
         private static void SendEmailSmtpClient(MailMessage mailMessage, string fromname = "Email Service", string fromemail = "server@romitsagu.com")
         {
 
