@@ -75,7 +75,7 @@ namespace EmailService
                         foreach (var messageRecepient in messageRecepient1)
                         {
                             messageRecepient.IsEmailSent = true;
-                            messageRecepient.EmailSentDateTime = DateTime.Now;
+                            messageRecepient.EmailSentDateTime = DateTime.UtcNow;
                             messageRecepient.IsProcessed = true;
                         }
                        
@@ -253,6 +253,10 @@ namespace EmailService
 
         private async static Task SendAlertEmail(Exception ex, string application = "Email Service - Errors")
         {
+            #if DEBUG
+            Console.WriteLine(ex.ToString());
+            #endif
+            #if RELEASE
             //var message = new MailMessage();
             //message.To.Add("romit.sagu@hotmail.com");
             //message.Headers.Add("Importance", "High");
@@ -276,7 +280,7 @@ namespace EmailService
             mail.Headers = Headers;
 
             SendEmailBrevo(mail, application);
-
+            #endif
         }
 
         private static string GetBody(Exception ex, string application = "Email Service")
